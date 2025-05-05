@@ -1,5 +1,10 @@
 import * as THREE from '../libs/three.module.js';
 import { OrbitControls } from '../libs/OrbitControls.js';
+import { GLTFLoader } from '../libs/GLTFLoader.js';
+
+import { createTerrain } from './terrain.js';
+import { loadPlants } from './plants.js';
+import { setupLighting } from './lighting.js';
 
 // Scene
 const scene = new THREE.Scene();
@@ -12,7 +17,7 @@ const camera = new THREE.PerspectiveCamera(
   0.1,
   1000
 );
-camera.position.set(0, 10, 30);
+camera.position.set(0, 50, 10);
 
 // Renderer
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -24,15 +29,13 @@ const controls = new OrbitControls(camera, renderer.domElement);
 controls.update();
 
 // Lighting
-scene.add(new THREE.AmbientLight(0xffffff, 1));
+setupLighting(scene, THREE);
 
-// Ground
-const plane = new THREE.Mesh(
-  new THREE.PlaneGeometry(100, 100),
-  new THREE.MeshLambertMaterial({ color: 0x223344, side: THREE.DoubleSide })
-);
-plane.rotation.x = -Math.PI / 2;
-scene.add(plane);
+// Terrain
+const geometry = createTerrain(scene, THREE);
+
+// Plants
+loadPlants(scene, THREE, GLTFLoader, geometry);
 
 // Animate
 function animate() {
