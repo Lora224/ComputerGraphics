@@ -13,4 +13,6 @@ export function setupLighting(scene, THREE) {
     const fillLight = new THREE.PointLight(0x88aaff, 0.5, 100);
     fillLight.position.set(-50, 30, -30);
     scene.add(fillLight);
+
+    
 }
