@@ -24,7 +24,7 @@ export async function loadSubmarine(scene, THREE, GLTFLoader) {
                 });
 
                 // ✅ Flashlight (spotlight)
-                flashlight = new THREE.SpotLight(0xffffff, 30, 150, Math.PI / 4, 0.3, 0.5);
+                flashlight = new THREE.SpotLight(0xffffff, 100, 700, Math.PI / 4, 1, 0.3);
                 flashlight.castShadow = true;
                 flashlight.position.set(0, 0, -2);  // near nose
                 submarine.add(flashlight);
@@ -40,7 +40,7 @@ export async function loadSubmarine(scene, THREE, GLTFLoader) {
                 const beamMaterial = new THREE.ShaderMaterial({
                     uniforms: {
                         color: { value: new THREE.Color(0x88ccff) },
-                        opacity: { value: 0.1 }
+                        opacity: { value: 0.001 }
                     },
                     vertexShader: `
                         varying float vIntensity;
@@ -116,17 +116,21 @@ export function updateSubmarine(dt, camera, THREE) {
 
     // Camera follow
     const followDistance = 15;
-    const followHeight = 5;
+const followHeight = 8;
 
-    const targetPosition = new THREE.Vector3();
-    submarine.getWorldPosition(targetPosition);
+const targetPosition = new THREE.Vector3();
+submarine.getWorldPosition(targetPosition);
 
-    const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(submarine.quaternion);
+const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(submarine.quaternion);
 
-    const cameraPosition = targetPosition.clone()
-        .add(forward.clone().multiplyScalar(-followDistance))
-        .add(new THREE.Vector3(0, followHeight, 0));
+const cameraPosition = targetPosition.clone()
+    .add(forward.clone().multiplyScalar(-followDistance))
+    .add(new THREE.Vector3(0, followHeight, 0));
 
-    camera.position.lerp(cameraPosition, 0.1);
-    camera.lookAt(targetPosition);
+camera.position.lerp(cameraPosition, 0.1);
+
+// 👇 Look slightly below the submarine
+const lookAtOffset = new THREE.Vector3(0, 6, 0);
+camera.lookAt(targetPosition.clone().add(lookAtOffset));
+
 }
