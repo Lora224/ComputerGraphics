@@ -1,4 +1,7 @@
 let submarine = null;
+let flashlight = null;
+let flashlightTarget = null;
+let flashlightBeam = null;
 const keysPressed = {};
 
 const submarineSpeed = 10;
@@ -11,14 +14,60 @@ export async function loadSubmarine(scene, THREE, GLTFLoader) {
             '/models/submarine/submarine.glb',
             (gltf) => {
                 submarine = gltf.scene;
-                submarine.position.set(0, 5, 0);
+                submarine.position.set(0, 20, 0);
 
-                // ✅ Find the actual submarine mesh inside gltf.scene and rotate it
+                // Rotate submarine to face forward
                 submarine.traverse((child) => {
                     if (child.isMesh) {
-                        child.rotation.y = Math.PI;  // Rotate the mesh itself
+                        child.rotation.y = Math.PI;
                     }
                 });
+
+                // ✅ Flashlight (spotlight)
+                flashlight = new THREE.SpotLight(0xffffff, 30, 150, Math.PI / 4, 0.3, 0.5);
+                flashlight.castShadow = true;
+                flashlight.position.set(0, 0, -2);  // near nose
+                submarine.add(flashlight);
+
+                // ✅ Target so spotlight points forward
+                flashlightTarget = new THREE.Object3D();
+                flashlightTarget.position.set(0, 0, -10);
+                submarine.add(flashlightTarget);
+                flashlight.target = flashlightTarget;
+
+                // ✅ Volumetric flashlight beam (shader-based)
+                const beamGeometry = new THREE.ConeGeometry(1.2, 20, 32, 1, true);
+                const beamMaterial = new THREE.ShaderMaterial({
+                    uniforms: {
+                        color: { value: new THREE.Color(0x88ccff) },
+                        opacity: { value: 0.1 }
+                    },
+                    vertexShader: `
+                        varying float vIntensity;
+                        void main() {
+                            vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+                            vIntensity = 1.0 - abs(position.y) / 10.0;
+                            gl_Position = projectionMatrix * mvPosition;
+                        }
+                    `,
+                    fragmentShader: `
+                        uniform vec3 color;
+                        uniform float opacity;
+                        varying float vIntensity;
+                        void main() {
+                            gl_FragColor = vec4(color, vIntensity * opacity);
+                        }
+                    `,
+                    transparent: true,
+                    depthWrite: false,
+                    blending: THREE.AdditiveBlending,
+                    side: THREE.DoubleSide
+                });
+
+                flashlightBeam = new THREE.Mesh(beamGeometry, beamMaterial);
+                flashlightBeam.rotation.x = Math.PI / 2;
+                flashlightBeam.position.set(0, 0, -8);
+                submarine.add(flashlightBeam);
 
                 scene.add(submarine);
                 resolve();
@@ -37,13 +86,27 @@ export function getSubmarine() {
 }
 
 export function setupSubmarineControls() {
-    window.addEventListener('keydown', (e) => keysPressed[e.key.toLowerCase()] = true);
-    window.addEventListener('keyup', (e) => keysPressed[e.key.toLowerCase()] = false);
+    window.addEventListener('keydown', (e) => {
+        const key = e.key.toLowerCase();
+        keysPressed[key] = true;
+
+        // ✅ Toggle flashlight & beam
+        if (key === 'f' && flashlight) {
+            flashlight.visible = !flashlight.visible;
+            if (flashlightBeam) flashlightBeam.visible = flashlight.visible;
+            console.log(`Flashlight ${flashlight.visible ? 'ON' : 'OFF'}`);
+        }
+    });
+
+    window.addEventListener('keyup', (e) => {
+        keysPressed[e.key.toLowerCase()] = false;
+    });
 }
 
 export function updateSubmarine(dt, camera, THREE) {
     if (!submarine) return;
 
+    // Movement
     if (keysPressed['w']) submarine.translateZ(-submarineSpeed * dt);
     if (keysPressed['s']) submarine.translateZ(submarineSpeed * dt);
     if (keysPressed['a']) submarine.rotateY(turnSpeed * dt);
@@ -51,7 +114,7 @@ export function updateSubmarine(dt, camera, THREE) {
     if (keysPressed['q']) submarine.translateY(submarineSpeed * dt);
     if (keysPressed['e']) submarine.translateY(-submarineSpeed * dt);
 
-    // Camera follow logic
+    // Camera follow
     const followDistance = 15;
     const followHeight = 5;
 
