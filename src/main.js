@@ -5,7 +5,15 @@ import { GLTFLoader } from '../libs/GLTFLoader.js';
 import { createTerrain } from './terrain.js';
 import { loadPlants } from './plants.js';
 import { setupLighting } from './lighting.js';
-import { initAnimals, updateAnimals } from './animals.js';
+import {
+  env,
+  initAnimals,
+  dynamicSpawn,
+  animalPool,
+  mixers,
+  schoolBehaviour,
+  predatorBehaviour
+} from './animals.js';
 
 
 // Scene
@@ -13,6 +21,7 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x001033);
 
 const clock = new THREE.Clock();
+
 
 // Camera
 const camera = new THREE.PerspectiveCamera(
@@ -71,20 +80,45 @@ scene.add(torchHelper);
 // Terrain
 const geometry = createTerrain(scene, THREE);
 
+
 // Plants
 loadPlants(scene, THREE, GLTFLoader, geometry);
 
 // Animals
-await initAnimals(scene, THREE, GLTFLoader);  
+env.playerPos.copy( camera.position );
+env.torchDir.set(0,0,-1).applyQuaternion(camera.quaternion).normalize();
 
+await initAnimals(scene, geometry);
+
+animate();
 // Animate
 function animate() {
   requestAnimationFrame(animate);
-  
+  env.playerPos.copy(camera.position);  //update environment with camera position
+  env.torchDir.set(0, 0, -1).applyQuaternion(camera.quaternion).normalize();
+
   const dt = clock.getDelta();
-  updateAnimals(dt,camera,torch);              // Update animal positions
+  mixers.forEach(m => m.update(dt));
+
+// animal behaviours
+dynamicSpawn(scene, env);
+
+  animalPool.forEach(fishObj => {
+    if (['Shark', 'Anglerfish'].includes(fishObj.config.name)) {
+      predatorBehaviour(dt, fishObj, env);
+    } else {
+      // find neighbours within perception radius (simple brute-force)
+      const neighbours = animalPool.filter(o =>
+        o !== fishObj &&
+        o.mesh.position.distanceTo(fishObj.mesh.position) < 5
+      );
+      schoolBehaviour(dt, fishObj, neighbours, env);
+    }
+  });
+
   torchHelper.update();                    // Update the torch helper
   controls.update();
+  
   renderer.render(scene, camera);
 }
-animate();
+
