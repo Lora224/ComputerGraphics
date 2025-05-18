@@ -126,7 +126,7 @@ function animate() {
      //submarine bahavior
     updateSubmarine(dt, camera, THREE);
     // animal behaviours
-    dynamicSpawn(scene, env);
+    //dynamicSpawn(scene, env);
 
   animalPool.forEach(fishObj => {
     if (['Shark', 'Anglerfish'].includes(fishObj.config.name)) {
@@ -142,7 +142,7 @@ function animate() {
   });
 
 
-  controls.update();
+  //controls.update();
   
   renderer.render(scene, camera);
 
