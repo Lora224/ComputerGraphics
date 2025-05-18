@@ -70,9 +70,9 @@ loadPlants(scene, THREE, GLTFLoader, geometry);
 env.playerPos.copy( camera.position );
 env.torchDir.set(0,0,-1).applyQuaternion(camera.quaternion).normalize();
 
-await initAnimals(scene, geometry);
+//await initAnimals(scene, geometry);
 
-animate();
+
 
 // Submarine
 await loadSubmarine(scene, THREE, GLTFLoader);
@@ -109,7 +109,7 @@ function createFloatingParticles(scene, THREE) {
 }
 
 const particles = createFloatingParticles(scene, THREE);
-
+animate();
 // Animate
 function animate() {
   requestAnimationFrame(animate);
@@ -141,7 +141,7 @@ function animate() {
     }
   });
 
-  torchHelper.update();                    // Update the torch helper
+
   controls.update();
   
   renderer.render(scene, camera);
