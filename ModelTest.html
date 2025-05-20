@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Model Viewer</title>
+  <style>
+    body { margin: 0; overflow: hidden; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+  <script type="module">
+    import * as THREE from '../libs/three.module.js';
+    import { OrbitControls } from '../libs/OrbitControls.js';
+    import { GLTFLoader } from '../libs/GLTFLoader.js';
+
+    // scene setup
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x101820);
+
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 500);
+    camera.position.set(0, 5, 20);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.target.set(0, 3, 0);
+    controls.update();
+
+    // lighting
+    const ambient = new THREE.AmbientLight(0xffffff, 0.4);
+    scene.add(ambient);
+
+    const spot = new THREE.SpotLight(0xffffff, 1.5);
+    spot.position.set(10, 30, 20);
+    spot.castShadow = true;
+    scene.add(spot);
+
+    // floor
+    const floor = new THREE.Mesh(
+      new THREE.PlaneGeometry(100, 100),
+      new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 1 })
+    );
+    floor.rotation.x = -Math.PI / 2;
+    scene.add(floor);
+
+    // load model
+    const loader = new GLTFLoader();
+    const scale = 1;
+    loader.load('./models/rock/Rock10.glb', (gltf) => {
+        const model = gltf.scene;
+        model.position.set(0, 1, 0);
+        model.scale.set(scale, scale, scale);
+        scene.add(model);
+    });
+
+    // render loop
+    function animate() {
+      requestAnimationFrame(animate);
+      renderer.render(scene, camera);
+    }
+    animate();
+  </script>
+</body>
+</html>

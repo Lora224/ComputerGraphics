@@ -3,7 +3,7 @@ import { OrbitControls } from '../libs/OrbitControls.js';
 import { GLTFLoader } from '../libs/GLTFLoader.js';
 
 import { createTerrain } from './terrain.js';
-import { loadPlants } from './plants.js';
+import { placeStaticModels } from './placeStaticModels.js';
 import { setupLighting } from './lighting.js';
 
 import {
@@ -59,11 +59,10 @@ scene.add(ambientLight);
 setupLighting(scene, THREE);
 
 // Terrain
-const geometry = createTerrain(scene, THREE);
+const { mesh, getTerrainHeight } = createTerrain(scene, THREE);
 
-
-// Plants
-loadPlants(scene, THREE, GLTFLoader, geometry);
+// Place static models
+placeStaticModels(scene, getTerrainHeight, THREE);
 
 // Animals
 
