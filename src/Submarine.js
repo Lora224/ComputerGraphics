@@ -24,7 +24,7 @@ export async function loadSubmarine(scene, THREE, GLTFLoader) {
                 });
 
                 // ✅ Flashlight (spotlight)
-                flashlight = new THREE.SpotLight(0xffffff, 1000, 100000, Math.PI / 4, 1, 0.3);
+                flashlight = new THREE.SpotLight(0xffffff, 1000, 10000, Math.PI / 4, 1, 0.3);
                 flashlight.castShadow = true;
                 flashlight.position.set(0, 0, -2);  // near nose
                 submarine.add(flashlight);
