@@ -2,7 +2,10 @@ import * as THREE from '../libs/three.module.js';
 import { OrbitControls } from '../libs/OrbitControls.js';
 import { createTerrain } from '../src/terrain.js';
 import { placeStaticModels } from '../src/placeStaticModels.js';
-
+import {
+  initAnimals,
+  animalPool,
+} from '../src/animals.js';
 
 // World side length
 const worldSize = 500;
@@ -33,6 +36,8 @@ controls.enableDamping = true;
 // Terrain
 const { mesh, getTerrainHeight } = createTerrain(worldSize, scene, THREE);
 
+//animals
+await initAnimals(scene, mesh.geometry, worldSize);
 // Place static models
 placeStaticModels(worldSize, scene, getTerrainHeight, THREE);
 

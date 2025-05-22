@@ -13,7 +13,9 @@ import {
   animalPool,
   mixers,
   schoolBehaviour,
-  predatorBehaviour
+  predatorBehaviour,
+  jellyfishBehaviour,
+  freeSwimBehaviour
 } from './animals.js';
 
 import {
@@ -56,6 +58,11 @@ setupLighting(scene, THREE);
 
 const { mesh, getTerrainHeight } = createTerrain(worldSize, scene, THREE);
 placeStaticModels(worldSize, scene, getTerrainHeight, THREE);
+
+
+//animal spawning
+await initAnimals(scene, mesh.geometry, worldSize);
+
 
 env.playerPos.copy(camera.position);
 env.torchDir.set(0, 0, -1).applyQuaternion(camera.quaternion).normalize();
@@ -165,16 +172,28 @@ function animate() {
   updateSubmarine(dt, camera, THREE);
   mixers.forEach(m => m.update(dt));
 
-  animalPool.forEach(fishObj => {
-    if (["Shark", "Anglerfish"].includes(fishObj.config.name)) {
-      predatorBehaviour(dt, fishObj, env);
-    } else {
-      const neighbours = animalPool.filter(o =>
-        o !== fishObj &&
-        o.mesh.position.distanceTo(fishObj.mesh.position) < 5
-      );
-      schoolBehaviour(dt, fishObj, neighbours, env);
-    }
+  // animal dynamic spawning and behavior
+  dynamicSpawn(scene, env);  
+animalPool.forEach(fishObj => {
+  const name = fishObj.config.name;
+  if (fishObj.mesh.userData.isSchooling) {
+    // find nearby schoolmates for boids forces
+    const neighbours = animalPool.filter(o =>
+      o !== fishObj &&
+      o.mesh.position.distanceTo(fishObj.mesh.position) < 5
+    );
++    schoolBehaviour(dt, fishObj, neighbours, env);
+  }
+  else if (name === 'Shark') {
+    predatorBehaviour(dt, fishObj, env);
+  }
+  else if (name === 'Jellyfish') {
+    jellyfishBehaviour(dt, fishObj);
+  }
+  else if (fishObj.mesh.userData.isFreeSwimmer) {
+    freeSwimBehaviour(dt, fishObj);
+  }
+
   });
 
   renderer.render(scene, camera);
