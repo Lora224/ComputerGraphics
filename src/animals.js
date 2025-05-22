@@ -1,3 +1,5 @@
+//TODO: adjust fish swimming speed
+
 import * as THREE from '../libs/three.module.js';
 import { GLTFLoader } from '../libs/GLTFLoader.js';
 import { clone as cloneSkel } from '../libs/SkeletonUtils.js';
@@ -7,28 +9,29 @@ export const env = {
   torchDir:            new THREE.Vector3(),
   torchAngleCos:       Math.cos(THREE.MathUtils.degToRad(15)),
   torchRange:          80,
-  predatorDetectRange: 30,
+  predatorDetectRange: 40,
   playerAvoidRange:    15
 };
 
-// Scale down all animals for world proportion
 const ANIMAL_SCALE_FACTOR = 0.2;
+function randomStateDuration() { return 3 + Math.random()*3; }
 
-// Random duration between 3–6s for predator states
-function randomStateDuration() {
-  return 3 + Math.random() * 3;
-}
+// ————— SCHOOL CONFIG —————
+// species that school: how many clusters, how big, and minimum inter‐fish distance
+const SCHOOL_CONFIG = {
+  Normal_fish: { schools: 8, clusterRadius: 20, minDist: 1.0 },
+  Jellyfish:   { schools: 6, clusterRadius: 15, minDist: 1.0 }
+};
 
-// Species definitions: remove Blue_Tang, add Jellyfish
 const speciesConfigs = [
-  { name: 'Normal_fish', path: './models/animals/Normal_fish.glb', count: 60, scale: 1.5 },
-  { name: 'Anglerfish',   path: './models/animals/Anglerfish.glb',  count: 6, scale: 4 },
-  { name: 'MantaRay',     path: './models/animals/Manta_ray.glb',   count: 7, scale: 16 },
-  { name: 'Blobfish',     path: './models/animals/Blobfish.glb',    count: 10, scale: 10 },
-  { name: 'Shark',        path: './models/animals/Shark.glb',       count: 3, scale: 16 },
-  { name: 'Crab',         path: './models/animals/Crab.glb',        count: 25, scale: 0.05 },
-  { name: 'Octopus',      path: './models/animals/Octopus.glb',     count: 14, scale: 8 },
-  { name: 'Jellyfish',    path: './models/animals/Jellyfish.glb',  count: 15, scale: 30 }
+  { name:'Normal_fish', path:'./models/animals/Normal_fish.glb', count:240, scale:3 },
+  { name:'Anglerfish',   path:'./models/animals/Anglerfish.glb',  count:6,  scale:4   },
+  { name:'MantaRay',     path:'./models/animals/Manta_ray.glb',   count:7,  scale:16  },
+  { name:'Blobfish',     path:'./models/animals/Blobfish.glb',    count:10, scale:10  },
+  { name:'Shark',        path:'./models/animals/Shark.glb',       count:6,  scale:16  },
+  { name:'Crab',         path:'./models/animals/Crab.glb',        count:25, scale:0.05},
+  { name:'Octopus',      path:'./models/animals/Octopus.glb',     count:6,  scale:8   },
+  { name:'Jellyfish',    path:'./models/animals/Jellyfish.glb',  count:60, scale:30  }
 ];
 
 let worldSize = 0;
@@ -39,146 +42,153 @@ export const animalPool = [];
 export const mixers     = [];
 export const speciesGltfs= {};
 
-/**
- * Initialize all animals once on load
- * Accepts either { mesh, getTerrainHeight } or raw geometry + ws
- */
+// ————— INIT ALL ANIMALS —————
 export async function initAnimals(scene, terrainData, ws) {
-  if (terrainData.mesh && typeof terrainData.getTerrainHeight === 'function') {
+  // resolve terrain geometry + height function
+  if (terrainData.mesh && terrainData.getTerrainHeight) {
     terrainGeom   = terrainData.mesh.geometry;
     getHeightFunc = terrainData.getTerrainHeight;
     worldSize     = terrainGeom.parameters.width;
   } else {
     terrainGeom   = terrainData;
-    getHeightFunc = (x, z) => getHeightFromGeometry(terrainGeom, x, z);
+    getHeightFunc = (x,z)=> getHeightFromGeometry(terrainGeom,x,z);
     worldSize     = ws || terrainGeom.parameters.width;
   }
 
-  // Load all species glTFs
+  // load all glTFs
   const loader = new GLTFLoader();
-  const tasks  = speciesConfigs.map(cfg =>
-    loader.loadAsync(cfg.path).then(gltf => ({ cfg, gltf }))
+  const loadTasks = speciesConfigs.map(cfg=>
+    loader.loadAsync(cfg.path).then(gltf=>({cfg,gltf}))
   );
-  const data = await Promise.all(tasks);
-
-  // Store for cloning
-  data.forEach(({ cfg, gltf }) => {
+  const loaded = await Promise.all(loadTasks);
+  loaded.forEach(({cfg,gltf})=>{
     speciesGltfs[cfg.name] = { gltf, config: cfg };
   });
 
-  // Spawn exactly count for each species
-data.forEach(({ cfg, gltf }) => {
-  if (cfg.name === 'Normal_fish') {
-    const schools = 2;
-    const perSchool = Math.floor(cfg.count / schools);
-    let spawned = 0;
+  // spawn each species
+  loaded.forEach(({cfg,gltf})=>{
+    const schoolDef = SCHOOL_CONFIG[cfg.name];
+    if (schoolDef) {
+      // — cluster spawning —
+      const { schools, clusterRadius, minDist } = schoolDef;
+      const perCluster = Math.floor(cfg.count / schools);
+      let spawned = 0;
 
-    for (let s = 0; s < schools; s++) {
-      for (let i = 0; i < perSchool; i++, spawned++) {
+      // pick cluster centers
+      const centers = Array.from({length:schools},()=>{
+        const cx = (Math.random()-0.5)*worldSize;
+        const cz = (Math.random()-0.5)*worldSize;
+        return {cx,cz};
+      });
+
+      // for each center, spawn perCluster fish
+      centers.forEach(({cx,cz}, idx)=>{
+        const positions = [];
+        for (let i=0; i<perCluster; i++, spawned++) {
+          let x,z,tries=0;
+          do {
+            const a = Math.random()*Math.PI*2;
+            const r = Math.random()*clusterRadius;
+            x = cx + Math.cos(a)*r;
+            z = cz + Math.sin(a)*r;
+            tries++;
+          } while (tries<10 && positions.some(p=>((p.x-x)**2+(p.z-z)**2)<minDist*minDist));
+          positions.push({x,z});
+
+          const mesh = spawnInstance(gltf.scene, cfg, scene, x, z);
+          mesh.userData.isSchooling = true;
+          mesh.userData.schoolId    = idx;
+        }
+      });
+
+      // any remainders spawn randomly but still spaced
+      while (spawned++ < cfg.count) {
         const mesh = spawnInstance(gltf.scene, cfg, scene);
-        mesh.userData.schoolId    = s;
         mesh.userData.isSchooling = true;
       }
     }
-
-    while (spawned++ < cfg.count) {
-      const mesh = spawnInstance(gltf.scene, cfg, scene);
-      mesh.userData.schoolId    = schools - 1;
-      mesh.userData.isSchooling = true;
+    else {
+      // non‐schooling species: just spawn at random
+      for (let i=0; i<cfg.count; i++) {
+        const mesh = spawnInstance(gltf.scene, cfg, scene);
+        mesh.userData.isSchooling = false;
+      }
     }
-  } else {
-    for (let i = 0; i < cfg.count; i++) {
-      const mesh = spawnInstance(gltf.scene, cfg, scene);
-      mesh.userData.isSchooling = false;
-    }
-  }
-});
+  });
 }
 
-function getHeightFromGeometry(geometry, x, z) {
-  const posAttr = geometry.attributes.position;
-  const width   = geometry.parameters.width;
-  const height  = geometry.parameters.height;
-  const segX    = geometry.parameters.widthSegments;
-  const segZ    = geometry.parameters.heightSegments;
-  const relX    = (x + width / 2) / width;
-  const relZ    = (z + height / 2) / height;
-  const ix      = Math.floor(relX * segX);
-  const iz      = Math.floor(relZ * segZ);
-  const idx     = iz * (segX + 1) + ix;
-  return posAttr.getY(idx);
-}
-
-function spawnInstance(originalScene, cfg, scene) {
+// ————— CLONE & POSITION ONE INSTANCE —————
+// xOverride,zOverride optional: gives cluster control
+function spawnInstance(originalScene, cfg, scene, xOverride, zOverride) {
   const mesh = cloneSkel(originalScene);
   mesh.name = cfg.name;
   mesh.scale.setScalar(cfg.scale * ANIMAL_SCALE_FACTOR);
 
-  // Choose X,Z in world or around player (unused dynamic spawn)
-  let x = (Math.random() - 0.5) * worldSize;
-  let z = (Math.random() - 0.5) * worldSize;
+  // choose X,Z
+  const x = (xOverride !== undefined
+    ? xOverride
+    : (Math.random()-0.5)*worldSize);
+  const z = (zOverride !== undefined
+    ? zOverride
+    : (Math.random()-0.5)*worldSize);
 
-  // Terrain Y
-  let y = getHeightFunc(x, z);
+  // base Y from terrain
+  let y = getHeightFunc(x,z);
 
-  // Special: Jellyfish hovers above terrain
-  if (cfg.name === 'Jellyfish') {
-    const hover = 2;
-    y += hover;
+  // jellyfish hover offset
+  if (cfg.name==='Jellyfish') y += 4;
+
+  mesh.position.set(x,y,z);
+
+  // initialize velocity & behaviour flags
+  mesh.userData.velocity   = new THREE.Vector3();
+  mesh.userData.baseHeight = mesh.position.y;
+
+  if (cfg.name==='Crab' || cfg.name==='Octopus') {
+    // ground‐stayers: no velocity
   }
-
-  mesh.position.set(x, y, z);
-
-  // Movement & state
-  mesh.userData.velocity = new THREE.Vector3();
-  if (cfg.name === 'Crab' || cfg.name === 'Octopus') {
-    // no movement
-  } else if (cfg.name === 'Jellyfish') {
+  else if (cfg.name==='Jellyfish') {
     // gentle vertical bob
-    mesh.userData.velocity.set(0, (Math.random() - 0.5) * 0.1, 0);
-    // add glow: emissive dim
-    mesh.traverse(child => {
-      if (child.material) {
-        child.material.emissive = new THREE.Color(0x00ffcc);
-        child.material.emissiveIntensity = 0.25;
-        child.material.transparent = true;
-        child.material.opacity = 0.7;
+    mesh.userData.velocity.set(0,(Math.random()-0.5)*0.1,0);
+    // dim emissive glow
+    mesh.traverse(c=> {
+      if (c.material) {
+        c.material.emissive = new THREE.Color(0x00ffcc);
+        c.material.emissiveIntensity = 0.5;
+        c.material.transparent = true;
+        c.material.opacity = 0.7;
       }
     });
-  } else if (cfg.name === 'Shark') {
-    mesh.userData.state = 'active';
-   mesh.userData.state       = 'active';
-   mesh.userData.stateTimer  = randomStateDuration();
-   // store a wander angle and baseHeight so they can roam
-   mesh.userData.wanderAngle = Math.random() * Math.PI * 2;
-   mesh.userData.baseHeight  = mesh.position.y;
-  }  else if (['MantaRay','Blobfish'].includes(cfg.name)) {
-  mesh.userData.isFreeSwimmer = true;
-  mesh.userData.freeTimer     = 2 + Math.random() * 3;    // pick new dir every 2–5s
-  mesh.userData.baseHeight    = mesh.position.y;
-  // initial direction
-  const a = Math.random() * Math.PI * 2;
-  mesh.userData.velocity = new THREE.Vector3(Math.cos(a), 0, Math.sin(a)).multiplyScalar(0.5);
-}
-
+  }
+  else if (cfg.name==='Shark') {
+    mesh.userData.state      = 'active';
+    mesh.userData.stateTimer = randomStateDuration();
+    mesh.userData.wanderAngle= Math.random()*Math.PI*2;
+  }
+  else if (['MantaRay','Blobfish','Anglerfish'].includes(cfg.name)) {
+    mesh.userData.isFreeSwimmer = true;
+    mesh.userData.freeTimer     = 2 + Math.random()*3;
+    const a = Math.random()*Math.PI*2;
+    mesh.userData.velocity.set(Math.cos(a),0,Math.sin(a)).multiplyScalar(0.5);
+  }
   else {
-    // schooling fish initial velocity
+    // schooling fish initial random swim
     mesh.userData.velocity.set(
-      (Math.random() - 0.5) * 0.4,
-      0,
-      (Math.random() - 0.5) * 0.4
+      (Math.random()-0.5)*0.5, 0,
+      (Math.random()-0.5)*0.5
     );
-   mesh.userData.baseHeight = mesh.position.y;
-    mesh.userData.freeTimer  = 2 + Math.random() * 3;
   }
 
   scene.add(mesh);
   animalPool.push({ mesh, config: cfg });
 
-  // Setup animations
+  // start any glTF animations
   const mixer = new THREE.AnimationMixer(mesh);
-  speciesGltfs[cfg.name].gltf.animations.forEach(clip => mixer.clipAction(clip).play());
+  speciesGltfs[cfg.name].gltf.animations.forEach(clip=>
+    mixer.clipAction(clip).play()
+  );
   mixers.push(mixer);
+
   return mesh;
 }
 
@@ -191,7 +201,7 @@ export function schoolBehaviour(dt, fishObj, neighbours, env) {
   if (name === 'Crab' || name === 'Octopus' || name === 'Jellyfish') return;
 
   const fish = fishObj.mesh;
-  const maxSpeed = 0.5;
+  const maxSpeed = 1.5;
   const maxForce = 0.02;
   const perception = 5;
   const align = new THREE.Vector3();
@@ -240,7 +250,7 @@ export function schoolBehaviour(dt, fishObj, neighbours, env) {
 }
 
 export function predatorBehaviour(dt, predatorObj, env) {
-  const speed = 0.5;
+  const speed = 1;
   const predator = predatorObj.mesh;
   const ud       = predator.userData;
 
@@ -270,7 +280,7 @@ export function predatorBehaviour(dt, predatorObj, env) {
   const toP = env.playerPos.clone().sub(predator.position);
   if (toP.length() < env.predatorDetectRange) {
     const dir = toP.normalize();
-    const speed = 0.5;
+    const speed = 1.5;
     predator.position.add(dir.multiplyScalar(speed * dt));
     predator.rotation.set(0, Math.atan2(dir.x, dir.z), 0);
   } else {
@@ -313,4 +323,17 @@ export function freeSwimBehaviour(dt, fishObj) {
   if (dir.lengthSq() > 1e-4) {
     mesh.rotation.set(0, Math.atan2(dir.x, dir.z), 0);
   }
+}
+function getHeightFromGeometry(geometry, x, z) {
+  const posAttr = geometry.attributes.position;
+  const width   = geometry.parameters.width;
+  const height  = geometry.parameters.height;
+  const segX    = geometry.parameters.widthSegments;
+  const segZ    = geometry.parameters.heightSegments;
+  const relX    = (x + width / 2) / width;
+  const relZ    = (z + height / 2) / height;
+  const ix      = Math.floor(relX * segX);
+  const iz      = Math.floor(relZ * segZ);
+  const idx     = iz * (segX + 1) + ix;
+  return posAttr.getY(idx);
 }
