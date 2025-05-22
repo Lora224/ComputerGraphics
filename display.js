@@ -3,6 +3,10 @@ import { OrbitControls } from '../libs/OrbitControls.js';
 import { createTerrain } from '../src/terrain.js';
 import { placeStaticModels } from '../src/placeStaticModels.js';
 
+
+// World side length
+const worldSize = 500;
+
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x042033);
 //scene.fog = new THREE.Fog(0x042033, 30, 150);
@@ -27,10 +31,10 @@ const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 
 // Terrain
-const { mesh, getTerrainHeight } = createTerrain(scene, THREE);
+const { mesh, getTerrainHeight } = createTerrain(worldSize, scene, THREE);
 
 // Place static models
-placeStaticModels(scene, getTerrainHeight, THREE);
+placeStaticModels(worldSize, scene, getTerrainHeight, THREE);
 
 // Animate
 function animate() {

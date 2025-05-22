@@ -23,6 +23,10 @@ import {
   setupSubmarineControls
 } from './submarine.js';
 
+
+// World side length
+const worldSize = 500;
+
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x000011);
 scene.fog = new THREE.FogExp2(0x000011, 0.035);
@@ -50,8 +54,8 @@ const ambientLight = new THREE.AmbientLight(0xffffff, 0.02);
 scene.add(ambientLight);
 setupLighting(scene, THREE);
 
-const { mesh, getTerrainHeight } = createTerrain(scene, THREE);
-placeStaticModels(scene, getTerrainHeight, THREE);
+const { mesh, getTerrainHeight } = createTerrain(worldSize, scene, THREE);
+placeStaticModels(worldSize, scene, getTerrainHeight, THREE);
 
 env.playerPos.copy(camera.position);
 env.torchDir.set(0, 0, -1).applyQuaternion(camera.quaternion).normalize();

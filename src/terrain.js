@@ -1,7 +1,6 @@
 import { ImprovedNoise } from '../libs/ImprovedNoise.js';
 
-export function createTerrain(scene, THREE) {
-  const size = 500;
+export function createTerrain(size, scene, THREE) {
   const segments = Math.floor(size * 0.4);
   const geometry = new THREE.PlaneGeometry(size, size, segments, segments);
   geometry.rotateX(-Math.PI / 2);

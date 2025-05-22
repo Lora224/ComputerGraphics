@@ -1,6 +1,6 @@
 import { GLTFLoader } from '../libs/GLTFLoader.js';
 
-export function placeStaticModels(scene, getTerrainHeight, THREE) {
+export function placeStaticModels(size, scene, getTerrainHeight, THREE) {
   const loader = new GLTFLoader();
   const area = 200;
   const sampleStep = 1;
@@ -35,8 +35,8 @@ export function placeStaticModels(scene, getTerrainHeight, THREE) {
 
   // === Plant clusters for Coral & Seaweed ===
   const plantModels = modelConfigs.filter(cfg => cfg.category === 'plants' && !cfg.model.includes('Clam'));
-  const clusterCount = 30;          // increased number of clusters
-  const minClusterDist = 5;        // min distance between cluster centers
+  const clusterCount = size * 0.1;          // increased number of clusters
+  const minClusterDist = 20;        // min distance between cluster centers
   const minMemberDist = 2.0;        // min distance between members
 
   plantModels.forEach(config => {
