@@ -23,19 +23,19 @@ export async function loadSubmarine(scene, THREE, GLTFLoader) {
                     }
                 });
 
-                // ✅ Flashlight (spotlight)
+                //  Flashlight (spotlight)
                 flashlight = new THREE.SpotLight(0xffffff, 1000, 10000, Math.PI / 4, 1, 0.3);
                 flashlight.castShadow = true;
                 flashlight.position.set(0, 0, -2);  // near nose
                 submarine.add(flashlight);
 
-                // ✅ Target so spotlight points forward
+                //  Target so spotlight points forward
                 flashlightTarget = new THREE.Object3D();
                 flashlightTarget.position.set(0, 0, -10);
                 submarine.add(flashlightTarget);
                 flashlight.target = flashlightTarget;
 
-                // ✅ Volumetric flashlight beam (shader-based)
+                //  Volumetric flashlight beam (shader-based)
                 const beamGeometry = new THREE.ConeGeometry(1.2, 20, 32, 1, true);
                 const beamMaterial = new THREE.ShaderMaterial({
                     uniforms: {
@@ -90,7 +90,7 @@ export function setupSubmarineControls() {
         const key = e.key.toLowerCase();
         keysPressed[key] = true;
 
-        // ✅ Toggle flashlight & beam
+        //  Toggle flashlight & beam
         if (key === 'f' && flashlight) {
             flashlight.visible = !flashlight.visible;
             if (flashlightBeam) flashlightBeam.visible = flashlight.visible;
@@ -129,7 +129,7 @@ const cameraPosition = targetPosition.clone()
 
 camera.position.lerp(cameraPosition, 0.1);
 
-// 👇 Look slightly below the submarine
+// Look slightly below the submarine
 const lookAtOffset = new THREE.Vector3(0, 6, 0);
 camera.lookAt(targetPosition.clone().add(lookAtOffset));
 
