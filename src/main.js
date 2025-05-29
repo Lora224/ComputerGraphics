@@ -25,7 +25,11 @@ import {
   setupSubmarineControls
 } from './submarine.js';
 
-// World side length
+const pxPerDepth = 3; 
+const centerOffset = 250; 
+let visualOffsetDepth = 450; 
+
+
 const worldSize = 500;
 
 const scene = new THREE.Scene();
@@ -58,7 +62,6 @@ setupLighting(scene, THREE);
 const { mesh, getTerrainHeight } = createTerrain(worldSize, scene, THREE);
 placeStaticModels(worldSize, scene, getTerrainHeight, THREE);
 
-// animal spawning
 await initAnimals(scene, mesh.geometry, worldSize);
 
 env.playerPos.copy(camera.position);
@@ -140,7 +143,19 @@ function createFloatingParticles(scene, THREE) {
 
 const particles = createFloatingParticles(scene, THREE);
 
-// Controls UI Toggle
+function generateDepthTicks(minDepth = 0, maxDepth = 1000, interval = 10) {
+  const track = document.getElementById('scaleTrack');
+  track.innerHTML = '';
+  for (let i = minDepth; i <= maxDepth; i += interval) {
+    const tick = document.createElement('div');
+    tick.className = 'tick';
+    tick.textContent = `${i}m`;
+    track.appendChild(tick);
+  }
+}
+generateDepthTicks(0, 1000, 10);
+
+
 const controlsUI = document.getElementById('controlsUI');
 const toggleBtn = document.getElementById('toggleControlsBtn');
 toggleBtn.addEventListener('click', () => {
@@ -172,12 +187,24 @@ function animate() {
 
     updateSubmarine(dt, camera, THREE);
 
-    // Move the depth indicator line
-    const maxDepth = 100;
-    const currentDepth = Math.max(0, Math.floor(submarine.position.y));
-    const depthRatio = Math.min(currentDepth / maxDepth, 1);
-    const indicator = document.getElementById('depthIndicator');
-    indicator.style.top = `${(1 - depthRatio) * 100}%`;
+    // Depth scale scrolling logic
+  const currentDepth = Math.max(0, Math.floor(submarine.position.y));
+const pxPerDepth = 3;
+const centerOffset = -1000;
+const maxDepth = 1000;
+
+const visualOffsetDepth = -450; // adjust to shift initial visual center
+const effectiveDepth = currentDepth + visualOffsetDepth;
+
+const translateY = centerOffset + effectiveDepth * pxPerDepth;
+const clampedTranslateY = Math.min(translateY, maxDepth * pxPerDepth);
+
+const track = document.getElementById('scaleTrack');
+track.style.transform = `translateY(${clampedTranslateY}px)`;
+
+
+
+
   }
 
   mixers.forEach(m => m.update(dt));

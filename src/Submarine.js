@@ -114,6 +114,14 @@ export function updateSubmarine(dt, camera, THREE) {
     if (keysPressed['q']) submarine.translateY(submarineSpeed * dt);
     if (keysPressed['e']) submarine.translateY(-submarineSpeed * dt);
 
+// Clamp height
+const pos = submarine.position;
+const maxHeight = 100;
+const minDepth = -1000;
+
+if (pos.y > maxHeight) pos.y = maxHeight;
+if (pos.y < minDepth) pos.y = minDepth;
+
     // Camera follow
     const followDistance = 15;
 const followHeight = 8;

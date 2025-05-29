@@ -11,29 +11,27 @@
 
   <!-- Controls UI -->
   <div id="controlsUI">
-    <h3>🕹️ Controls</h3>
+    <h3>🕹️Controls</h3>
     <ul>
       <li><b>W / S</b> – Move Forward / Backward</li>
       <li><b>A / D</b> – Turn Left / Right</li>
       <li><b>Q / E</b> – Move Up / Down</li>
-      <li><b>F</b> – Toggle Flashlight</li>
+      <li><b>F</b> – Toggle Flashlight ON/OFF</li>
     </ul>
   </div>
 
   <!-- Toggle Controls Button -->
-  <button id="toggleControlsBtn">❔ Controls</button>
+  <button id="toggleControlsBtn">Controls</button>
 
   <!-- Depth Scale UI -->
-  <div id="depthWrapper">
-    <div id="depthScale">
-      <div class="tick" style="top: 0%">100m</div>
-      <div class="tick" style="top: 25%">75m</div>
-      <div class="tick" style="top: 50%">50m</div>
-      <div class="tick" style="top: 75%">25m</div>
-      <div class="tick" style="top: 100%">0m</div>
-      <div id="depthIndicator"></div>
-    </div>
+<div id="depthWrapper">
+  <div id="depthScale">
+    <div id="scaleTrack"></div>
+    <div id="depthIndicator"></div>
   </div>
+</div>
+
+
 
   <script type="module" src="./src/main.js"></script>
 </body>
