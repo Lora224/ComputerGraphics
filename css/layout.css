@@ -1,32 +1,88 @@
-/* 
-    Created on : 04/03/2020, 3:08:18 PM
-    Author     : george
-*/
-
-canvas {
-    width: 100%;
-    height: 100%;
-}
-
 body {
-    font-family: Monospace;
-    margin: 0px;
-    overflow: hidden;
+  margin: 0;
+  overflow: hidden;
+  background-color: black;
+  font-family: sans-serif;
 }
 
-#info {
-    position: absolute;
-    top: 10px;
-    width: 100%;
-    text-align: center;
+/* Controls UI */
+#controlsUI {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  background-color: rgba(0, 0, 0, 0.5);
+  color: #ffffff;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 1.6;
+  z-index: 1000;
+  max-width: 240px;
+}
+#controlsUI h3 {
+  margin-top: 0;
+  margin-bottom: 8px;
+  font-size: 16px;
+  color: #88ccff;
+}
+#controlsUI ul {
+  padding-left: 20px;
+  margin: 0;
+}
+#controlsUI li {
+  margin-bottom: 4px;
 }
 
-h1 {
-    text-align: center;
-    color: cornsilk;
-    font-size: 300%;
-    background-color: #23445D;
-    width: 100%;
-    padding: 10px 5px;
-    margin-top: auto;
+/* Toggle Controls Button */
+#toggleControlsBtn {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border: 1px solid white;
+  border-radius: 8px;
+  cursor: pointer;
+  z-index: 1000;
+}
+
+/* Depth Meter */
+#depthWrapper {
+  position: absolute;
+  top: 50%;
+  left: 70px;
+  transform: translateY(-50%);
+  z-index: 1000;
+  font-family: sans-serif;
+}
+
+#depthScale {
+  position: relative;
+  width: 80px;
+  height: 300px;
+  background-color: rgba(0, 51, 102, 0.5);
+  border: 2px solid #00aaff00;
+  border-radius: 12px;
+  color: #88ccff;
+  padding-left: 10px;
+}
+
+.tick {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  transform: translateY(-50%);
+  border-top: 1px solid e#00aaff;
+  font-size: 12px;
+  padding-top: 2px;
+}
+
+#depthIndicator {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background-color: #00ffff;
+  transform: translateY(-1px);
 }

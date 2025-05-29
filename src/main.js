@@ -25,7 +25,6 @@ import {
   setupSubmarineControls
 } from './submarine.js';
 
-
 // World side length
 const worldSize = 500;
 
@@ -59,10 +58,8 @@ setupLighting(scene, THREE);
 const { mesh, getTerrainHeight } = createTerrain(worldSize, scene, THREE);
 placeStaticModels(worldSize, scene, getTerrainHeight, THREE);
 
-
-//animal spawning
+// animal spawning
 await initAnimals(scene, mesh.geometry, worldSize);
-
 
 env.playerPos.copy(camera.position);
 env.torchDir.set(0, 0, -1).applyQuaternion(camera.quaternion).normalize();
@@ -72,7 +69,7 @@ const submarine = getSubmarine();
 setupSubmarineControls();
 
 function createFloatingParticles(scene, THREE) {
-  const particleCount = 1000000;
+  const particleCount = 100000;
   const geometry = new THREE.BufferGeometry();
   const positions = [];
 
@@ -116,15 +113,13 @@ function createFloatingParticles(scene, THREE) {
       varying vec3 vWorldPosition;
 
       void main() {
-        // If flashlight is off, discard all particles
         if (lightEnabled < 0.5) discard;
 
         float dist = length(lightPos - vWorldPosition);
         vec3 toParticle = normalize(vWorldPosition - lightPos);
         float angleFactor = dot(beamDirection, toParticle);
 
-        // Only keep particles inside cone
-        float minConeAngle = 0.1; // smaller = wider cone
+        float minConeAngle = 0.1;
         if (angleFactor < minConeAngle) discard;
 
         float brightness = clamp(angleFactor * (1.0 / (dist * dist)) * lightIntensity * 100.0, 0.0, 1.0);
@@ -145,6 +140,13 @@ function createFloatingParticles(scene, THREE) {
 
 const particles = createFloatingParticles(scene, THREE);
 
+// Controls UI Toggle
+const controlsUI = document.getElementById('controlsUI');
+const toggleBtn = document.getElementById('toggleControlsBtn');
+toggleBtn.addEventListener('click', () => {
+  controlsUI.style.display = controlsUI.style.display === 'none' ? 'block' : 'none';
+});
+
 function animate() {
   requestAnimationFrame(animate);
   const dt = clock.getDelta();
@@ -164,36 +166,41 @@ function animate() {
       );
       particles.material.uniforms.lightEnabled.value = flashlight.visible ? 1.0 : 0.0;
     }
+
+    particles.material.uniforms.cameraPos.value.copy(camera.position);
+    particles.rotation.y += 0.0005;
+
+    updateSubmarine(dt, camera, THREE);
+
+    // Move the depth indicator line
+    const maxDepth = 100;
+    const currentDepth = Math.max(0, Math.floor(submarine.position.y));
+    const depthRatio = Math.min(currentDepth / maxDepth, 1);
+    const indicator = document.getElementById('depthIndicator');
+    indicator.style.top = `${(1 - depthRatio) * 100}%`;
   }
 
-  particles.material.uniforms.cameraPos.value.copy(camera.position);
-  particles.rotation.y += 0.0005;
-
-  updateSubmarine(dt, camera, THREE);
   mixers.forEach(m => m.update(dt));
+  dynamicSpawn(scene, env);
 
-  // animal dynamic spawning and behavior
-  dynamicSpawn(scene, env);  
-animalPool.forEach(fishObj => {
-  const name = fishObj.config.name;
-  if (fishObj.mesh.userData.isSchooling) {
-    // find nearby schoolmates for boids forces
-    const neighbours = animalPool.filter(o =>
-      o !== fishObj &&
-      o.mesh.position.distanceTo(fishObj.mesh.position) < 5
-    );
-+    schoolBehaviour(dt, fishObj, neighbours, env);
-  }
-  else if (name === 'Shark') {
-    predatorBehaviour(dt, fishObj, env);
-  }
-  else if (name === 'Jellyfish') {
-    jellyfishBehaviour(dt, fishObj);
-  }
-  else if (fishObj.mesh.userData.isFreeSwimmer) {
-    freeSwimBehaviour(dt, fishObj);
-  }
-
+  animalPool.forEach(fishObj => {
+    const name = fishObj.config.name;
+    if (fishObj.mesh.userData.isSchooling) {
+      const neighbours = animalPool.filter(o =>
+        o !== fishObj &&
+        o.mesh.position.distanceTo(fishObj.mesh.position) < 5
+      );
+      schoolBehaviour(dt, fishObj, neighbours, env);
+    }
+    else if (name === 'Shark') {
+      predatorBehaviour(dt, fishObj, env);
+    }
+    else if (name === 'Jellyfish') {
+      jellyfishBehaviour(dt, fishObj);
+    }
+    else if (fishObj.mesh.userData.isFreeSwimmer) {
+      freeSwimBehaviour(dt, fishObj);
+    }
   });
 
   renderer.render(scene, camera);

@@ -14,7 +14,7 @@ export async function loadSubmarine(scene, THREE, GLTFLoader) {
             '/models/submarine/submarine.glb',
             (gltf) => {
                 submarine = gltf.scene;
-                submarine.position.set(0, 20, 0);
+                submarine.position.set(0, 50, 0);
 
                 // Rotate submarine to face forward
                 submarine.traverse((child) => {
