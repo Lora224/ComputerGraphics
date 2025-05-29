@@ -9,8 +9,8 @@ export const env = {
   torchDir:            new THREE.Vector3(),
   torchAngleCos:       Math.cos(THREE.MathUtils.degToRad(15)),
   torchRange:          80,
-  predatorDetectRange: 40,
-  playerAvoidRange:    15
+  predatorDetectRange: 60,
+  playerAvoidRange:    25
 };
 
 const ANIMAL_SCALE_FACTOR = 0.2;
@@ -19,19 +19,19 @@ function randomStateDuration() { return 3 + Math.random()*3; }
 // ————— SCHOOL CONFIG —————
 // species that school: how many clusters, how big, and minimum inter‐fish distance
 const SCHOOL_CONFIG = {
-  Normal_fish: { schools: 8, clusterRadius: 20, minDist: 1.0 },
-  Jellyfish:   { schools: 6, clusterRadius: 15, minDist: 1.0 }
+  Normal_fish: { schools: 16, clusterRadius: 20, minDist: 0.5, heightRange: 5 },
+  Jellyfish:   { schools: 12, clusterRadius: 10, minDist: 1.0 }
 };
 
 const speciesConfigs = [
-  { name:'Normal_fish', path:'./models/animals/Normal_fish.glb', count:240, scale:3 },
+  { name:'Normal_fish', path:'./models/animals/Normal_fish.glb', count:360, scale:4 },
   { name:'Anglerfish',   path:'./models/animals/Anglerfish.glb',  count:6,  scale:4   },
-  { name:'MantaRay',     path:'./models/animals/Manta_ray.glb',   count:7,  scale:16  },
+  { name:'MantaRay',     path:'./models/animals/Manta_ray.glb',   count:10,  scale:16  },
   { name:'Blobfish',     path:'./models/animals/Blobfish.glb',    count:10, scale:10  },
-  { name:'Shark',        path:'./models/animals/Shark.glb',       count:6,  scale:16  },
-  { name:'Crab',         path:'./models/animals/Crab.glb',        count:25, scale:0.05},
+  { name:'Shark',        path:'./models/animals/Shark.glb',       count:6,  scale:20  },
+  { name:'Crab',         path:'./models/animals/Crab.glb',        count:25, scale:0.04},
   { name:'Octopus',      path:'./models/animals/Octopus.glb',     count:6,  scale:8   },
-  { name:'Jellyfish',    path:'./models/animals/Jellyfish.glb',  count:60, scale:30  }
+  { name:'Jellyfish',    path:'./models/animals/Jellyfish.glb',  count:140, scale:35  }
 ];
 
 let worldSize = 0;
@@ -70,19 +70,29 @@ export async function initAnimals(scene, terrainData, ws) {
     const schoolDef = SCHOOL_CONFIG[cfg.name];
     if (schoolDef) {
       // — cluster spawning —
-      const { schools, clusterRadius, minDist } = schoolDef;
+      const { schools, clusterRadius, minDist, heightRange} = schoolDef;
       const perCluster = Math.floor(cfg.count / schools);
       let spawned = 0;
 
       // pick cluster centers
-      const centers = Array.from({length:schools},()=>{
+      const centers = Array.from({length: schools}, () => {
         const cx = (Math.random()-0.5)*worldSize;
         const cz = (Math.random()-0.5)*worldSize;
-        return {cx,cz};
+        const baseY = getHeightFunc(cx, cz);
+        // choose one random cluster-height per school
+        const halfH = heightRange * 0.5;
+        const maxY = 100;  // same maxHeight as Submarine.js :contentReference[oaicite:1]{index=1}
+        const cy = THREE.MathUtils.randFloat(
+          baseY + 1 + halfH,
+          maxY - halfH
+        );
+
+        return { cx, cz, cy };
       });
 
+
       // for each center, spawn perCluster fish
-      centers.forEach(({cx,cz}, idx)=>{
+      centers.forEach(({ cx, cz, cy }, idx) => {
         const positions = [];
         for (let i=0; i<perCluster; i++, spawned++) {
           let x,z,tries=0;
@@ -94,10 +104,13 @@ export async function initAnimals(scene, terrainData, ws) {
             tries++;
           } while (tries<10 && positions.some(p=>((p.x-x)**2+(p.z-z)**2)<minDist*minDist));
           positions.push({x,z});
-
-          const mesh = spawnInstance(gltf.scene, cfg, scene, x, z);
+          // pick a random height within ±heightRange/2 of the cluster center
+          const halfH = heightRange * 0.5;
+          const randomY = THREE.MathUtils.randFloat(cy - halfH, cy + halfH);
+          const mesh = spawnInstance(gltf.scene, cfg, scene, x, z, randomY);
           mesh.userData.isSchooling = true;
           mesh.userData.schoolId    = idx;
+
         }
       });
 
@@ -119,7 +132,7 @@ export async function initAnimals(scene, terrainData, ws) {
 
 // ————— CLONE & POSITION ONE INSTANCE —————
 // xOverride,zOverride optional: gives cluster control
-function spawnInstance(originalScene, cfg, scene, xOverride, zOverride) {
+function spawnInstance(originalScene, cfg, scene, xOverride, zOverride, yOverride) {
   const mesh = cloneSkel(originalScene);
   mesh.name = cfg.name;
   mesh.scale.setScalar(cfg.scale * ANIMAL_SCALE_FACTOR);
@@ -132,13 +145,25 @@ function spawnInstance(originalScene, cfg, scene, xOverride, zOverride) {
     ? zOverride
     : (Math.random()-0.5)*worldSize);
 
-  // base Y from terrain
-  let y = getHeightFunc(x,z);
+// base terrain height
+const terrainY = getHeightFunc(x, z);
+// if cluster or manual override provided, use it; otherwise pick random
+let y = (yOverride !== undefined)
+  ? yOverride
+  : terrainY;
 
-  // jellyfish hover offset
-  if (cfg.name==='Jellyfish') y += 4;
+// for all swimmers (not crabs/octopus on the ground),
+// pick a random Y between terrain+1 and the submarine ceiling
+if (cfg.name !== 'Crab' && cfg.name !== 'Octopus') {
+  const minY = terrainY + 1;
+  const maxY = 100;  // same maxHeight as Submarine.js :contentReference[oaicite:1]{index=1}
+  if (maxY > minY) {
+    y = THREE.MathUtils.randFloat(minY, maxY);
+  }
+}
 
-  mesh.position.set(x,y,z);
+mesh.position.set(x, y, z);
+
 
   // initialize velocity & behaviour flags
   mesh.userData.velocity   = new THREE.Vector3();
@@ -169,13 +194,13 @@ function spawnInstance(originalScene, cfg, scene, xOverride, zOverride) {
     mesh.userData.isFreeSwimmer = true;
     mesh.userData.freeTimer     = 2 + Math.random()*3;
     const a = Math.random()*Math.PI*2;
-    mesh.userData.velocity.set(Math.cos(a),0,Math.sin(a)).multiplyScalar(0.5);
+    mesh.userData.velocity.set(Math.cos(a),0,Math.sin(a)).multiplyScalar(1.5);
   }
   else {
     // schooling fish initial random swim
     mesh.userData.velocity.set(
-      (Math.random()-0.5)*0.5, 0,
-      (Math.random()-0.5)*0.5
+      (Math.random()-0.5)*1, 0,
+      (Math.random()-0.5)*1
     );
   }
 
@@ -201,8 +226,8 @@ export function schoolBehaviour(dt, fishObj, neighbours, env) {
   if (name === 'Crab' || name === 'Octopus' || name === 'Jellyfish') return;
 
   const fish = fishObj.mesh;
-  const maxSpeed = 1.5;
-  const maxForce = 0.02;
+  const maxSpeed = 3;
+  const maxForce = 0.05;
   const perception = 5;
   const align = new THREE.Vector3();
   const coh   = new THREE.Vector3();
@@ -235,8 +260,8 @@ export function schoolBehaviour(dt, fishObj, neighbours, env) {
   // player avoidance
   const toP = fish.position.clone().sub(env.playerPos);
   if (toP.length() < env.playerAvoidRange) {
-    const avoid = toP.setLength(maxSpeed)
-      .sub(fish.userData.velocity).clampLength(0, maxForce * 2);
+    const avoid = toP.setLength(maxSpeed*1.5)
+      .sub(fish.userData.velocity).clampLength(0, maxForce * 4);
     fish.userData.velocity.add(avoid);
   }
 
@@ -250,7 +275,7 @@ export function schoolBehaviour(dt, fishObj, neighbours, env) {
 }
 
 export function predatorBehaviour(dt, predatorObj, env) {
-  const speed = 1;
+  const speed = 2.5;
   const predator = predatorObj.mesh;
   const ud       = predator.userData;
 
@@ -278,16 +303,16 @@ export function predatorBehaviour(dt, predatorObj, env) {
 
   // chase player if close
   const toP = env.playerPos.clone().sub(predator.position);
-  if (toP.length() < env.predatorDetectRange) {
-    const dir = toP.normalize();
-    const speed = 1.5;
-    predator.position.add(dir.multiplyScalar(speed * dt));
+ if (toP.length() < env.predatorDetectRange) {
+   const dir = toP.normalize();
+   const chaseSpeed = 4.0;       // chase at 4× speed :contentReference[oaicite:3]{index=3}
+   predator.position.add(dir.multiplyScalar(chaseSpeed * dt))
     predator.rotation.set(0, Math.atan2(dir.x, dir.z), 0);
   } else {
     // simple wander
    ud.wanderAngle += (Math.random() - 0.5) * 0.5 * dt;
    const dir = new THREE.Vector3(Math.cos(ud.wanderAngle), 0, Math.sin(ud.wanderAngle));
-   predator.position.add(dir.multiplyScalar(speed * dt));
+   predator.position.add(dir.multiplyScalar(speed * dt));  // faster roam :contentReference[oaicite:4]{index=4}
    // keep their original depth
    predator.position.y = ud.baseHeight;
    predator.rotation.set(0, Math.atan2(dir.x, dir.z), 0);
@@ -309,7 +334,7 @@ export function freeSwimBehaviour(dt, fishObj) {
   if (mesh.userData.freeTimer <= 0) {
     // pick a new random horizontal direction
     const a = Math.random() * Math.PI * 2;
-    mesh.userData.velocity.set(Math.cos(a), 0, Math.sin(a)).multiplyScalar(0.5);
+    mesh.userData.velocity.set(Math.cos(a), 0, Math.sin(a)).multiplyScalar(1.5);
     mesh.userData.freeTimer = 2 + Math.random() * 3;
   }
 

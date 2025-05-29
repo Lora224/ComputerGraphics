@@ -8,6 +8,17 @@
   <title>DEEP DIVE</title>
 </head>
 <body>
+//bgm
+  <audio id="bgm" loop>
+    <source src="./assets/Whale.mp3" type="audio/mpeg" />
+
+    Your browser does not support the audio element.
+  </audio>
+  //bgm 2 with 50% volume
+  <audio id="bgm2" loop>
+    <source src="./assets/Underwater.mp3" type="audio/mpeg" />
+    Your browser does not support the audio element.
+  </audio>
 
   <!-- Controls UI -->
   <div id="controlsUI">
@@ -17,7 +28,29 @@
       <li><b>A / D</b> – Turn Left / Right</li>
       <li><b>Q / E</b> – Move Up / Down</li>
       <li><b>F</b> – Toggle Flashlight ON/OFF</li>
+      <!-- Button to control both BGM -->
+      <button id="toggleBothBgmBtn">Play/Pause BGM</button>
+      <script>
+        document.getElementById('toggleBothBgmBtn').addEventListener('click', function() {
+          const bgm1 = document.getElementById('bgm');
+          const bgm2 = document.getElementById('bgm2');
+          if (bgm1.paused && bgm2.paused) {
+            bgm1.play();
+            bgm2.play();
+          } else {
+            bgm1.pause();
+            bgm2.pause();
+          }
+        });
+        // Set the volume to 50% for bgm2
+        document.getElementById('bgm2').volume = 0.5;
+      </script>
+    </div>
     </ul>
+
+  </div>
+ <div id="spotifyWrapper">
+   
   </div>
 
   <!-- Toggle Controls Button -->
