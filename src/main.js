@@ -25,7 +25,7 @@ import {
   setupSubmarineControls
 } from './submarine.js';
 
-const pxPerDepth = 3; 
+const pxPerDepth = 10; 
 const centerOffset = 250; 
 let visualOffsetDepth = 450; 
 
@@ -72,7 +72,7 @@ const submarine = getSubmarine();
 setupSubmarineControls();
 
 function createFloatingParticles(scene, THREE) {
-  const particleCount = 100000;
+  const particleCount = 300000;
   const geometry = new THREE.BufferGeometry();
   const positions = [];
 
@@ -187,13 +187,18 @@ function animate() {
 
     updateSubmarine(dt, camera, THREE);
 
+const terrainY = getTerrainHeight(submarine.position.x, submarine.position.z);
+if (submarine.position.y < terrainY + 2) {
+  submarine.position.y = terrainY + 2; // Stops from sinking into terrain
+}
+
     // Depth scale scrolling logic
   const currentDepth = Math.max(0, Math.floor(submarine.position.y));
 const pxPerDepth = 3;
 const centerOffset = -1000;
 const maxDepth = 1000;
 
-const visualOffsetDepth = -450; // adjust to shift initial visual center
+const visualOffsetDepth = -450; 
 const effectiveDepth = currentDepth + visualOffsetDepth;
 
 const translateY = centerOffset + effectiveDepth * pxPerDepth;
