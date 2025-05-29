@@ -153,7 +153,7 @@ function generateDepthTicks(minDepth = 0, maxDepth = 1000, interval = 10) {
     track.appendChild(tick);
   }
 }
-generateDepthTicks(0, 1000, 10);
+generateDepthTicks(0, 10000, 10);
 
 
 const controlsUI = document.getElementById('controlsUI');
