@@ -6,11 +6,16 @@ export function createTerrain(size, scene, THREE) {
   geometry.rotateX(-Math.PI / 2);
 
   const noise = new ImprovedNoise();
+
+  // add random seed offsets
+  const seedX = Math.random() * 10000;
+  const seedZ = Math.random() * 10000;
+
   const position = geometry.attributes.position;
 
   const lowFreq = 80;
   const highFreq = 5;
-  const largeAmplitude = 80;
+  const largeAmplitude = 50;
   const smallAmplitude = 3;
 
   const gridSize = segments + 1; // number of vertices per row
@@ -28,12 +33,13 @@ export function createTerrain(size, scene, THREE) {
 
     let y = 0;
 
-    const baseNoise = noise.noise(x / lowFreq, z / lowFreq, 0);
-    const peakFactor = noise.noise(x / 100, z / 100, 200);
+    // apply random seed to noise inputs
+    const baseNoise = noise.noise((x + seedX) / lowFreq, (z + seedZ) / lowFreq, 0);
+    const peakFactor = noise.noise((x + seedX) / 100, (z + seedZ) / 100, 200);
     const variation = 0.5 + peakFactor * 2.0;
 
     y += baseNoise * variation * largeAmplitude;
-    y += noise.noise(x / highFreq, z / highFreq, 0) * smallAmplitude;
+    y += noise.noise((x + seedX) / highFreq, (z + seedZ) / highFreq, 0) * smallAmplitude;
 
     const dist2 = (x * 0.03) ** 2 + (z * 0.03) ** 2;
     y += 10 * Math.exp(-dist2);
