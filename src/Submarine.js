@@ -11,7 +11,7 @@ export async function loadSubmarine(scene, THREE, GLTFLoader) {
     const loader = new GLTFLoader();
     return new Promise((resolve, reject) => {
         loader.load(
-            '../models/submarine/submarine.glb',
+            'models/submarine/submarine.glb',
             (gltf) => {
                 submarine = gltf.scene;
                 submarine.position.set(0, 50, 0);

@@ -24,14 +24,14 @@ const SCHOOL_CONFIG = {
 };
 
 const speciesConfigs = [
-  { name:'Normal_fish', path:'../models/animals/Normal_fish.glb', count:360, scale:4 },
-  { name:'Anglerfish',   path:'../models/animals/Anglerfish.glb',  count:6,  scale:4   },
-  { name:'MantaRay',     path:'../models/animals/Manta_ray.glb',   count:10,  scale:16  },
-  { name:'Blobfish',     path:'../models/animals/Blobfish.glb',    count:10, scale:5  },
-  { name:'Shark',        path:'../models/animals/Shark.glb',       count:6,  scale:10  },
-  { name:'Crab',         path:'../models/animals/Crab.glb',        count:25, scale:0.04},
-  { name:'Octopus',      path:'../models/animals/Octopus.glb',     count:6,  scale:2   },
-  { name:'Jellyfish',    path:'../models/animals/Jellyfish.glb',  count:140, scale:35  }
+  { name:'Normal_fish', path:'models/animals/Normal_fish.glb', count:360, scale:4 },
+  { name:'Anglerfish',   path:'models/animals/Anglerfish.glb',  count:6,  scale:4   },
+  { name:'MantaRay',     path:'models/animals/Manta_ray.glb',   count:10,  scale:16  },
+  { name:'Blobfish',     path:'models/animals/Blobfish.glb',    count:10, scale:5  },
+  { name:'Shark',        path:'models/animals/Shark.glb',       count:6,  scale:10  },
+  { name:'Crab',         path:'models/animals/Crab.glb',        count:25, scale:0.04},
+  { name:'Octopus',      path:'models/animals/Octopus.glb',     count:6,  scale:2   },
+  { name:'Jellyfish',    path:'models/animals/Jellyfish.glb',  count:140, scale:35  }
 ];
 
 let worldSize = 0;
