@@ -37,15 +37,15 @@ export function placeStaticModels(size, scene, getTerrainHeight, THREE) {
 
   // detection parameters (you can tweak these)
   const ruinRadius    = 20;   // search flat circle radius for Ruin
-  const shipRadius    = 50;   // for Ship
-  const maxDelta      = 6;    // max height difference inside circle
+  const shipRadius    = 30;   // for Ship
+  const maxDelta      = 5;    // max height difference inside circle
   const scanStep      = 20;   // grid step for candidate centers
   const interiorStep  = 10;   // interior sampling spacing
-  const minSeparation = 40;  // minimum distance between the two centers
+  const minSeparation = 150;  // minimum distance between the two centers
 
   const halfRange = size / 2;
 
-  // helper: test a circular area centered at (cx,cz) for flatness
+  // check if terrain is flat enough in a circle
   function isFlatArea(cx, cz, radius) {
     const centerH = getTerrainHeight(cx, cz);
 
@@ -74,11 +74,17 @@ export function placeStaticModels(size, scene, getTerrainHeight, THREE) {
 
   // find a flat center of given radius, excluding areas around 'exclude'
   function findFlatCenter(radius, exclude = []) {
-    for (let cx = -halfRange + radius; cx <= halfRange - radius; cx += scanStep) {
-      for (let cz = -halfRange + radius; cz <= halfRange - radius; cz += scanStep) {
-        // skip near origin
-        if (Math.hypot(cx, cz) < radius) continue;
-        // skip near any excluded center
+    const maxRadius = halfRange - radius;  // max distance from origin
+    // for each concentric ring at distance d from origin
+    for (let d = 0; d <= maxRadius; d += scanStep) {
+      // sample points around the ring every 30°
+      for (let a = 0; a < 360; a += 30) {
+        const rad = a * Math.PI / 180;
+        const cx  = Math.cos(rad) * d;
+        const cz  = Math.sin(rad) * d;
+        // skip if too close to origin
+        if (d < radius) continue;
+        // skip if overlaps any excluded circle
         if (exclude.some(e => Math.hypot(cx - e.x, cz - e.z) < e.radius + radius)) continue;
         // test flatness
         if (isFlatArea(cx, cz, radius)) {
@@ -86,9 +92,10 @@ export function placeStaticModels(size, scene, getTerrainHeight, THREE) {
         }
       }
     }
-    // fallback to first valid
+    // fallback
     return { x: radius, z: radius };
   }
+
 
   // 1) locate Ruin center
   const ruinCenter = findFlatCenter(ruinRadius);
@@ -101,10 +108,10 @@ export function placeStaticModels(size, scene, getTerrainHeight, THREE) {
   // place Ruin (scale doubled, yOffset doubled)
   loader.load('./models/building/Ruin.glb', gltf => {
     const o = gltf.scene.clone();
-    o.scale.setScalar(20); // was 15
+    o.scale.setScalar(20);
     o.position.set(
       ruinCenter.x,
-      getTerrainHeight(ruinCenter.x, ruinCenter.z) + 10, // was +7
+      getTerrainHeight(ruinCenter.x, ruinCenter.z) + 8,
       ruinCenter.z
     );
     scene.add(o);
