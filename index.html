@@ -4,21 +4,17 @@
   <meta charset="UTF-8" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="./css/layout.css" />
+  <link rel="stylesheet" href="../css/layout.css" />
   <title>DEEP DIVE</title>
 </head>
 <body>
 //bgm
-  <audio id="bgm" loop>
-    <source src="./assets/Whale.mp3" type="audio/mpeg" />
+<audio id="bgm" src="./assets/Whale.mp3" autoplay loop ></audio>
 
-    Your browser does not support the audio element.
-  </audio>
+  
   //bgm 2 with 50% volume
-  <audio id="bgm2" loop>
-    <source src="./assets/Underwater.mp3" type="audio/mpeg" />
-    Your browser does not support the audio element.
-  </audio>
+<audio id="bgm" src="./assets/Underwater.mp3" autoplay loop></audio>
+
 
   <!-- Controls UI -->
   <div id="controlsUI">
@@ -31,9 +27,6 @@
       
     </ul>
 
-  </div>
- <div id="spotifyWrapper">
-   
   </div>
 
   <!-- Toggle Controls Button -->
@@ -49,6 +42,6 @@
 
 
 
-  <script type="module" src="./src/main.js"></script>
+  <script type="module" src="../src/main.js"></script>
 </body>
 </html>
