@@ -48,10 +48,10 @@
 
     // load model
     const loader = new GLTFLoader();
-    const scale = 1;
-    loader.load('./models/rock/Rock10.glb', (gltf) => {
+    const scale = 15;
+    loader.load('./models/building/Ruin.glb', (gltf) => { //./models/plants/Clam.glb ./models/building/Ship1.glb
         const model = gltf.scene;
-        model.position.set(0, 1, 0);
+        model.position.set(0, 7, 0);
         model.scale.set(scale, scale, scale);
         scene.add(model);
     });
