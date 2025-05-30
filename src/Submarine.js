@@ -3,7 +3,7 @@ let flashlight = null;
 let flashlightTarget = null;
 let flashlightBeam = null;
 const keysPressed = {};
-
+//
 const submarineSpeed = 10;
 const turnSpeed = Math.PI;
 
