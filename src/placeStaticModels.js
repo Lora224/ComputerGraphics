@@ -38,10 +38,10 @@ export function placeStaticModels(size, scene, getTerrainHeight, THREE) {
   // detection parameters (you can tweak these)
   const ruinRadius    = 20;   // search flat circle radius for Ruin
   const shipRadius    = 50;   // for Ship
-  const maxDelta      = 5;    // max height difference inside circle
+  const maxDelta      = 6;    // max height difference inside circle
   const scanStep      = 20;   // grid step for candidate centers
   const interiorStep  = 10;   // interior sampling spacing
-  const minSeparation = 100;  // minimum distance between the two centers
+  const minSeparation = 40;  // minimum distance between the two centers
 
   const halfRange = size / 2;
 
