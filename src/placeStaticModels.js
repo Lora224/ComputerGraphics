@@ -120,7 +120,7 @@ export function placeStaticModels(size, scene, getTerrainHeight, THREE) {
   // place Ship
   loader.load('./models/building/Ship.glb', gltf => {
     const o = gltf.scene.clone();
-    o.scale.setScalar(1);
+    o.scale.setScalar(2);
     o.position.set(
       shipCenter.x,
       getTerrainHeight(shipCenter.x, shipCenter.z),
@@ -140,7 +140,7 @@ export function placeStaticModels(size, scene, getTerrainHeight, THREE) {
 
   // === Plant clusters ===
   const plantModels = modelConfigs.filter(cfg => cfg.category === 'plants' && !cfg.model.includes('Clam'));
-  const clusterCount = size * 0.1;          // increased number of clusters
+  const clusterCount = size * 0.4;          // increased number of clusters
   const minClusterDist = 20;        // min distance between cluster centers
   const minMemberDist = 2.0;        // min distance between members
 
